@@ -3,6 +3,7 @@
         <i 
             class="fa fa-2x"
             :class="icon"
+            @click="saveEntry"
             ></i>
     </button>
 </template>
@@ -14,6 +15,11 @@ export default {
         icon: {
             type: String,
             default: 'fa-plus'
+        }
+    },
+    methods: {
+        saveEntry() {
+            this.$emit('on:click')
         }
     }
 
