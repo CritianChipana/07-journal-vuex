@@ -12,7 +12,16 @@
             </div>
 
             <div>
-                <button class="btn btn-danger mx-2">
+                <input 
+                    type="file"
+                    @change="onSelectedImage"
+                >
+
+                <button 
+                    v-if="entry.id"
+                    class="btn btn-danger mx-2"
+                    @click="onDeleteEntry"
+                >
                     Borrar
                     <i class="fa fa-trash-alt"></i>
                 </button>
@@ -54,6 +63,7 @@ import { defineAsyncComponent } from 'vue'
 import { mapGetters, mapActions } from 'vuex'
 
 import getDayMonthYear from "./../helpers/getDayMonthYear"
+import Swal from 'sweetalert2'
 
 export default {
     props: {
@@ -86,7 +96,7 @@ export default {
         Fab: defineAsyncComponent( () => import('./../components/Fab.vue') )
     },
     methods: {
-        ...mapActions('journal', ['updateEntry']),
+        ...mapActions('journal', ['updateEntry', 'createEntry','deleteEntry']),
 
         loadEntry() {
 
@@ -106,15 +116,54 @@ export default {
         },
         async saveEntry() {
 
+            new Swal( {
+                title: 'Espere por favor',
+                allowOutsideClick: false
+            })
+            Swal.showLoading()
+
             if (this.entry.id) {
                 // Actualizar
                 await this.updateEntry(this.entry)
             } else {
                 //crear un entry
-                console.log('crear entry')
+                const id = await this.createEntry(this.entry)
+
+                //salir de new
+                this.$router.push({name: 'entry', params: {id}})
+
+                // console.log('crear entry')
             }
-            
-        } 
+
+            Swal.fire('Guardado', 'Entrada registrada con exito', 'success')
+        },
+        async onDeleteEntry () {
+
+            const { isConfirmed } = await Swal.fire({
+                title: '¿Está seguro?',
+                text: 'Una vez borrado, no se puede recuperar',
+                showDenyButton: true,
+                confirmButtonText: 'Si estoy seguro'
+            })
+
+            if (isConfirmed) {
+                new Swal({
+                    title: 'Espere por favor',
+                    allowOutsideClick: false
+                })
+                Swal.showLoading()
+                await this.deleteEntry(this.entry.id)
+                this.$router.push({name: 'no-entry'})
+
+                Swal.fire('Eliminado','','success')
+            }
+        },
+        onSelectedImage ( event ) {
+            const file = event.target.files[0]
+            if(!file){
+                return
+            }
+        }
     },
     created() {
         this.loadEntry()
