@@ -14,7 +14,10 @@
             <div>
                 <input 
                     type="file"
+                    ref="imageSelector"
                     @change="onSelectedImage"
+                    v-show="false"
+                    accept="image/png, image/jpeg"
                 >
 
                 <button 
@@ -25,7 +28,9 @@
                     Borrar
                     <i class="fa fa-trash-alt"></i>
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary"
+                    @click="onSelectImage"
+                >
                     Subir Foto
                     <i class="fa fa-upload"></i>
                 </button>
@@ -43,7 +48,14 @@
         </div>
         
         <img 
-            src="https://astelus.com/wp-content/viajes/Lago-Moraine-Parque-Nacional-Banff-Alberta-Canada.jpg" 
+            v-if="entry.picture && !localImage"
+            :src="entry.picture" 
+            alt="entry-picture"
+            class="img-thumbnail"
+        />
+        <img 
+            v-if="localImage"
+            :src="localImage" 
             alt="entry-picture"
             class="img-thumbnail"
         />
@@ -61,9 +73,10 @@
 import { defineAsyncComponent } from 'vue'
 
 import { mapGetters, mapActions } from 'vuex'
+import Swal from 'sweetalert2'
 
 import getDayMonthYear from "./../helpers/getDayMonthYear"
-import Swal from 'sweetalert2'
+import uploadImage from "./../helpers/uploadImage"
 
 export default {
     props: {
@@ -74,7 +87,9 @@ export default {
     },
     data() {
         return {
-            entry:  null
+            entry:  null,
+            localImage: null,
+            file: null
         }
     },
     computed: {
@@ -122,6 +137,10 @@ export default {
             })
             Swal.showLoading()
 
+            const picture = await uploadImage(this.file)
+
+            this.entry.picture = picture
+
             if (this.entry.id) {
                 // Actualizar
                 await this.updateEntry(this.entry)
@@ -134,6 +153,8 @@ export default {
 
                 // console.log('crear entry')
             }
+
+            this.file = null
 
             Swal.fire('Guardado', 'Entrada registrada con exito', 'success')
         },
@@ -159,10 +180,22 @@ export default {
             }
         },
         onSelectedImage ( event ) {
+            console.log('ssssssssssss')
             const file = event.target.files[0]
             if(!file){
+                this.localImage = null
+                this.file = file
                 return
             }
+
+            this.file = file
+
+            const fr = new FileReader()
+            fr.onload = () => this.localImage = fr.result
+            fr.readAsDataURL(file)
+        },
+        onSelectImage() {
+            this.$refs.imageSelector.click()
         }
     },
     created() {
